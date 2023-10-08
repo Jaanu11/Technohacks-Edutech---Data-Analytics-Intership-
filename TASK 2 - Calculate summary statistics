@@ -1,0 +1,208 @@
+Calculate Summary Statistics 
+
+ 
+from IPython.display import Image
+Image(width=750, filename='Descriptive Statistics Table.png') 
+
+ Producing a Summary Statistics Table
+As per normal, we will first import several necessary Python packages and set some options for viewing the data. As with prior chapters, we will be using the Python Data Analysis Library, or PANDAS, extensively for our data manipulations.
+
+Import packages and set viewing options
+import numpy as np
+import pandas as pd
+from pandas import DataFrame
+from pandas import Series
+#Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+I'm using version 0.16.2 of PANDAS
+
+pd.__version__
+'0.16.2'
+
+I like suppressing scientific notation in my numbers. So, if you'd rather see "0.48" than "4.800000e-01", then run the following line. Note that this does not change the actual values. For outputting to CSV we'll have to run some additional code later on.
+
+pd.set_option('display.float_format', lambda x: '%.2f' % x)
+Read in dataframe
+In Chapter 4 we created a version of the dataframe that omitted all tweets that were retweets, allowing us to focus only on original messages sent by the 41 Twitter accounts. In Chapter 5 we then added 6 new variables to this dataset. Let's now open this saved file. As we can see in the operations below this dataframe contains 60 variables for 26,257 tweets.
+
+df = pd.read_pickle('Original 2013 CSR Tweets with 3 binary variables.pkl')
+print "# of variables in dataframe:", len(df.columns)
+print  "# of tweets in dataframe:", len(df)
+df.head(2)
+# of variables in dataframe: 60
+# of tweets in dataframe: 26257
+rowid	query	tweet_id_str	inserted_date	language	coordinates	retweeted_status	created_at	month	year	content	from_user_screen_name	from_user_id	from_user_followers_count	from_user_friends_count	from_user_listed_count	from_user_favourites_count	from_user_statuses_count	from_user_description	from_user_location	from_user_created_at	retweet_count	favorite_count	entities_urls	entities_urls_count	entities_hashtags	entities_hashtags_count	entities_mentions	entities_mentions_count	in_reply_to_screen_name	in_reply_to_status_id	source	entities_expanded_urls	entities_media_count	media_expanded_url	media_url	media_type	video_link	photo_link	twitpic	num_characters	num_words	retweeted_user	retweeted_user_description	retweeted_user_screen_name	retweeted_user_followers_count	retweeted_user_listed_count	retweeted_user_statuses_count	retweeted_user_location	retweeted_tweet_created_at	Fortune_2012_rank	Company	CSR_sustainability	specific_project_initiative_area	English	RTs_binary	favorites_binary	hashtags_binary	mentions_binary	URLs_binary
+0	67340	humanavitality	306897327585652736	2014-03-09 13:46:50.222857	en	NaN	NaN	2013-02-27 22:43:19.000000	2	2013	@louloushive (Tweet 2) We encourage other empl...	humanavitality	274041023	2859	440	38	25	1766	This is the official Twitter account for Human...	NaN	Tue Mar 29 16:23:02 +0000 2011	0	0	NaN	0	NaN	0	louloushive	1	louloushive	306218267737989120.00	web	NaN	nan	NaN	NaN	NaN	0	0	0	121	19	nan	NaN	NaN	nan	nan	nan	NaN	NaN	79	Humana	0	1	1.00	0	0	0	1	0
+1	39454	FundacionPfizer	308616393706844160	2014-03-09 13:38:20.679967	es	NaN	NaN	2013-03-04 16:34:17.000000	3	2013	¿Sabes por qué la #vacuna contra la #neumonía ...	FundacionPfizer	188384056	2464	597	50	11	2400	Noticias sobre Responsabilidad Social y Fundac...	México	Wed Sep 08 16:14:11 +0000 2010	1	0	NaN	0	vacuna, neumonía	2	NaN	0	NaN	nan	web	NaN	nan	NaN	NaN	NaN	0	0	0	138	20	nan	NaN	NaN	nan	nan	nan	NaN	NaN	40	Pfizer	0	1	0.00	1	0	1	0	0
+
+List all the columns in the DataFrame
+
+df.columns
+Index([u'rowid', u'query', u'tweet_id_str', u'inserted_date', u'language',
+       u'coordinates', u'retweeted_status', u'created_at', u'month', u'year',
+       u'content', u'from_user_screen_name', u'from_user_id',
+       u'from_user_followers_count', u'from_user_friends_count',
+       u'from_user_listed_count', u'from_user_favourites_count',
+       u'from_user_statuses_count', u'from_user_description',
+       u'from_user_location', u'from_user_created_at', u'retweet_count',
+       u'favorite_count', u'entities_urls', u'entities_urls_count',
+       u'entities_hashtags', u'entities_hashtags_count', u'entities_mentions',
+       u'entities_mentions_count', u'in_reply_to_screen_name',
+       u'in_reply_to_status_id', u'source', u'entities_expanded_urls',
+       u'entities_media_count', u'media_expanded_url', u'media_url',
+       u'media_type', u'video_link', u'photo_link', u'twitpic',
+       u'num_characters', u'num_words', u'retweeted_user',
+       u'retweeted_user_description', u'retweeted_user_screen_name',
+       u'retweeted_user_followers_count', u'retweeted_user_listed_count',
+       u'retweeted_user_statuses_count', u'retweeted_user_location',
+       u'retweeted_tweet_created_at', u'Fortune_2012_rank', u'Company',
+       u'CSR_sustainability', u'specific_project_initiative_area', u'English',
+       u'RTs_binary', u'favorites_binary', u'hashtags_binary',
+       u'mentions_binary', u'URLs_binary'],
+      dtype='object')
+Create Sub-Set of DataFrame with only Desired Variables
+You might not want to include all of your variables in the summary statistics table. When you're dealing with a dataset with a lot of columns, I find the easiest way is to output the column names to a list, copy and paste the output into another cell, then delete the columns you don't want.
+
+print df.columns.tolist()
+['rowid', 'query', 'tweet_id_str', 'inserted_date', 'language', 'coordinates', 'retweeted_status', 'created_at', 'month', 'year', 'content', 'from_user_screen_name', 'from_user_id', 'from_user_followers_count', 'from_user_friends_count', 'from_user_listed_count', 'from_user_favourites_count', 'from_user_statuses_count', 'from_user_description', 'from_user_location', 'from_user_created_at', 'retweet_count', 'favorite_count', 'entities_urls', 'entities_urls_count', 'entities_hashtags', 'entities_hashtags_count', 'entities_mentions', 'entities_mentions_count', 'in_reply_to_screen_name', 'in_reply_to_status_id', 'source', 'entities_expanded_urls', 'entities_media_count', 'media_expanded_url', 'media_url', 'media_type', 'video_link', 'photo_link', 'twitpic', 'num_characters', 'num_words', 'retweeted_user', 'retweeted_user_description', 'retweeted_user_screen_name', 'retweeted_user_followers_count', 'retweeted_user_listed_count', 'retweeted_user_statuses_count', 'retweeted_user_location', 'retweeted_tweet_created_at', 'Fortune_2012_rank', 'Company', 'CSR_sustainability', 'specific_project_initiative_area', 'English', 'RTs_binary', 'favorites_binary', 'hashtags_binary', 'mentions_binary', 'URLs_binary']
+
+I've copy and pasted the above output into the cell below and kept only a subset of the columns. Note the use of the single square brackets above to denote column names but the double square brackets below. In PANDAS the double brackets refer to dataframes; in the following line I am thus saying I want my dataframe df to be limited to the columns listed on the right-hand side of the equation.
+
+df = df[['content','from_user_screen_name','from_user_followers_count','from_user_listed_count','from_user_statuses_count','retweet_count','favorite_count','entities_urls_count','entities_hashtags_count','entities_mentions_count',
+ 'num_characters','Company', 'English','RTs_binary','favorites_binary','hashtags_binary','mentions_binary',
+ 'URLs_binary']]
+print "# of variables in dataframe:", len(df.columns)
+print  "# of tweets in dataframe:", len(df)
+df.head(2)
+# of variables in dataframe: 18
+# of tweets in dataframe: 26257
+content	from_user_screen_name	from_user_followers_count	from_user_listed_count	from_user_statuses_count	retweet_count	favorite_count	entities_urls_count	entities_hashtags_count	entities_mentions_count	num_characters	Company	English	RTs_binary	favorites_binary	hashtags_binary	mentions_binary	URLs_binary
+0	@louloushive (Tweet 2) We encourage other empl...	humanavitality	2859	38	1766	0	0	0	0	1	121	Humana	1.00	0	0	0	1	0
+1	¿Sabes por qué la #vacuna contra la #neumonía ...	FundacionPfizer	2464	50	2400	1	0	0	2	0	138	Pfizer	0.00	1	0	1	0	0
+
+As you can see above, we now have a dataframe with only 18 variables.
+
+Generate Summary Statistics
+The describe function is the basic way to produce summary statistics for all the variables in your dataframe.
+
+df.describe()
+from_user_followers_count	from_user_listed_count	from_user_statuses_count	retweet_count	favorite_count	entities_urls_count	entities_hashtags_count	entities_mentions_count	num_characters	English	RTs_binary	favorites_binary	hashtags_binary	mentions_binary	URLs_binary
+count	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00
+mean	48397.00	533.32	5190.04	3.83	1.52	0.63	1.01	0.96	111.11	0.97	0.55	0.33	0.63	0.61	0.62
+std	103199.48	684.03	4004.43	42.94	15.28	0.50	1.01	1.14	29.89	0.17	0.50	0.47	0.48	0.49	0.49
+min	58.00	8.00	9.00	0.00	0.00	0.00	0.00	0.00	9.00	0.00	0.00	0.00	0.00	0.00	0.00
+25%	4426.00	209.00	2311.00	0.00	0.00	0.00	0.00	0.00	94.00	1.00	0.00	0.00	0.00	0.00	0.00
+50%	6401.00	253.00	4231.00	1.00	0.00	1.00	1.00	1.00	122.00	1.00	1.00	0.00	1.00	1.00	1.00
+75%	37586.00	748.00	6324.00	2.00	1.00	1.00	2.00	1.00	135.00	1.00	1.00	1.00	1.00	1.00	1.00
+max	424892.00	4605.00	16594.00	3719.00	1150.00	4.00	9.00	11.00	159.00	1.00	1.00	1.00	1.00	1.00	1.00
+
+If you'd like to see the help for the describe function use the question mark.
+
+DataFrame.describe?
+
+Use the dir function to get an alphabetical listing of valid names (attributes) in an object.
+
+print dir(df.describe())
+['English', 'RTs_binary', 'T', 'URLs_binary', '_AXIS_ALIASES', '_AXIS_IALIASES', '_AXIS_LEN', '_AXIS_NAMES', '_AXIS_NUMBERS', '_AXIS_ORDERS', '_AXIS_REVERSED', '_AXIS_SLICEMAP', '__abs__', '__add__', '__and__', '__array__', '__array_wrap__', '__bool__', '__bytes__', '__class__', '__contains__', '__delattr__', '__delitem__', '__dict__', '__dir__', '__div__', '__doc__', '__eq__', '__finalize__', '__floordiv__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__getitem__', '__getstate__', '__gt__', '__hash__', '__iadd__', '__idiv__', '__imul__', '__init__', '__invert__', '__ipow__', '__isub__', '__iter__', '__itruediv__', '__le__', '__len__', '__lt__', '__mod__', '__module__', '__mul__', '__ne__', '__neg__', '__new__', '__nonzero__', '__or__', '__pow__', '__radd__', '__rand__', '__rdiv__', '__reduce__', '__reduce_ex__', '__repr__', '__rfloordiv__', '__rmod__', '__rmul__', '__ror__', '__rpow__', '__rsub__', '__rtruediv__', '__rxor__', '__setattr__', '__setitem__', '__setstate__', '__sizeof__', '__str__', '__sub__', '__subclasshook__', '__truediv__', '__unicode__', '__weakref__', '__xor__', '_accessors', '_add_numeric_operations', '_agg_by_level', '_align_frame', '_align_series', '_apply_broadcast', '_apply_empty_result', '_apply_raw', '_apply_standard', '_at', '_auto_consolidate', '_box_col_values', '_box_item_values', '_check_inplace_setting', '_check_is_chained_assignment_possible', '_check_setitem_copy', '_clear_item_cache', '_combine_const', '_combine_frame', '_combine_match_columns', '_combine_match_index', '_combine_series', '_combine_series_infer', '_compare_frame', '_compare_frame_evaluate', '_consolidate_inplace', '_construct_axes_dict', '_construct_axes_dict_for_slice', '_construct_axes_dict_from', '_construct_axes_from_arguments', '_constructor', '_constructor_expanddim', '_constructor_sliced', '_count_level', '_create_indexer', '_dir_additions', '_dir_deletions', '_ensure_valid_index', '_expand_axes', '_flex_compare_frame', '_from_arrays', '_from_axes', '_get_agg_axis', '_get_axis', '_get_axis_name', '_get_axis_number', '_get_axis_resolvers', '_get_block_manager_axis', '_get_bool_data', '_get_cacher', '_get_index_resolvers', '_get_item_cache', '_get_numeric_data', '_get_values', '_getitem_array', '_getitem_column', '_getitem_frame', '_getitem_multilevel', '_getitem_slice', '_iat', '_iget_item_cache', '_iloc', '_indexed_same', '_info_axis', '_info_axis_name', '_info_axis_number', '_info_repr', '_init_dict', '_init_mgr', '_init_ndarray', '_internal_names', '_internal_names_set', '_is_cached', '_is_datelike_mixed_type', '_is_mixed_type', '_is_numeric_mixed_type', '_is_view', '_ix', '_ixs', '_join_compat', '_loc', '_maybe_cache_changed', '_maybe_update_cacher', '_metadata', '_needs_reindex_multi', '_protect_consolidate', '_reduce', '_reindex_axes', '_reindex_axis', '_reindex_columns', '_reindex_index', '_reindex_multi', '_reindex_with_indexers', '_repr_fits_horizontal_', '_repr_fits_vertical_', '_repr_html_', '_reset_cache', '_sanitize_column', '_series', '_set_as_cached', '_set_axis', '_set_is_copy', '_set_item', '_setitem_array', '_setitem_frame', '_setitem_slice', '_setup_axes', '_slice', '_stat_axis', '_stat_axis_name', '_stat_axis_number', '_typ', '_unpickle_frame_compat', '_unpickle_matrix_compat', '_update_inplace', '_validate_dtype', '_xs', 'abs', 'add', 'add_prefix', 'add_suffix', 'align', 'all', 'any', 'append', 'apply', 'applymap', 'as_blocks', 'as_matrix', 'asfreq', 'assign', 'astype', 'at', 'at_time', 'axes', 'between_time', 'bfill', 'blocks', 'bool', 'boxplot', 'clip', 'clip_lower', 'clip_upper', 'columns', 'combine', 'combineAdd', 'combineMult', 'combine_first', 'compound', 'consolidate', 'convert_objects', 'copy', 'corr', 'corrwith', 'count', 'cov', 'cummax', 'cummin', 'cumprod', 'cumsum', 'describe', 'diff', 'div', 'divide', 'dot', 'drop', 'drop_duplicates', 'dropna', 'dtypes', 'duplicated', 'empty', 'entities_hashtags_count', 'entities_mentions_count', 'entities_urls_count', 'eq', 'equals', 'eval', 'favorite_count', 'favorites_binary', 'ffill', 'fillna', 'filter', 'first', 'first_valid_index', 'floordiv', 'from_csv', 'from_dict', 'from_items', 'from_records', 'from_user_followers_count', 'from_user_listed_count', 'from_user_statuses_count', 'ftypes', 'ge', 'get', 'get_dtype_counts', 'get_ftype_counts', 'get_value', 'get_values', 'groupby', 'gt', 'hashtags_binary', 'head', 'hist', 'iat', 'icol', 'idxmax', 'idxmin', 'iget_value', 'iloc', 'index', 'info', 'insert', 'interpolate', 'irow', 'is_copy', 'isin', 'isnull', 'iteritems', 'iterkv', 'iterrows', 'itertuples', 'ix', 'join', 'keys', 'kurt', 'kurtosis', 'last', 'last_valid_index', 'le', 'load', 'loc', 'lookup', 'lt', 'mad', 'mask', 'max', 'mean', 'median', 'memory_usage', 'mentions_binary', 'merge', 'min', 'mod', 'mode', 'mul', 'multiply', 'ndim', 'ne', 'notnull', 'num_characters', 'pct_change', 'pipe', 'pivot', 'pivot_table', 'plot', 'pop', 'pow', 'prod', 'product', 'quantile', 'query', 'radd', 'rank', 'rdiv', 'reindex', 'reindex_axis', 'reindex_like', 'rename', 'rename_axis', 'reorder_levels', 'replace', 'resample', 'reset_index', 'retweet_count', 'rfloordiv', 'rmod', 'rmul', 'rpow', 'rsub', 'rtruediv', 'sample', 'save', 'select', 'select_dtypes', 'sem', 'set_axis', 'set_index', 'set_value', 'shape', 'shift', 'size', 'skew', 'slice_shift', 'sort', 'sort_index', 'sortlevel', 'squeeze', 'stack', 'std', 'sub', 'subtract', 'sum', 'swapaxes', 'swaplevel', 'tail', 'take', 'to_clipboard', 'to_csv', 'to_dense', 'to_dict', 'to_excel', 'to_gbq', 'to_hdf', 'to_html', 'to_json', 'to_latex', 'to_msgpack', 'to_panel', 'to_period', 'to_pickle', 'to_records', 'to_sparse', 'to_sql', 'to_stata', 'to_string', 'to_timestamp', 'to_wide', 'transpose', 'truediv', 'truncate', 'tshift', 'tz_convert', 'tz_localize', 'unstack', 'update', 'values', 'var', 'where', 'xs']
+
+CHANGE TO TWO DECIMALS (n.b. - This step is not necessary if you have run the display.float_format command earlier)
+
+np.round(df.describe(), 2)
+from_user_followers_count	from_user_listed_count	from_user_statuses_count	retweet_count	favorite_count	entities_urls_count	entities_hashtags_count	entities_mentions_count	num_characters	English	RTs_binary	favorites_binary	hashtags_binary	mentions_binary	URLs_binary
+count	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00	26257.00
+mean	48397.00	533.32	5190.04	3.83	1.52	0.63	1.01	0.96	111.11	0.97	0.55	0.33	0.63	0.61	0.62
+std	103199.48	684.03	4004.43	42.94	15.28	0.50	1.01	1.14	29.89	0.17	0.50	0.47	0.48	0.49	0.49
+min	58.00	8.00	9.00	0.00	0.00	0.00	0.00	0.00	9.00	0.00	0.00	0.00	0.00	0.00	0.00
+25%	4426.00	209.00	2311.00	0.00	0.00	0.00	0.00	0.00	94.00	1.00	0.00	0.00	0.00	0.00	0.00
+50%	6401.00	253.00	4231.00	1.00	0.00	1.00	1.00	1.00	122.00	1.00	1.00	0.00	1.00	1.00	1.00
+75%	37586.00	748.00	6324.00	2.00	1.00	1.00	2.00	1.00	135.00	1.00	1.00	1.00	1.00	1.00	1.00
+max	424892.00	4605.00	16594.00	3719.00	1150.00	4.00	9.00	11.00	159.00	1.00	1.00	1.00	1.00	1.00	1.00
+
+NOW LET'S TRANSPOSE THE OUTPUT -- necessary for a more typical social scientific presentation of the data. Note how only 15 variables are shown. These are our numerical variables. The categorical variables content, from_user_screen_name, and Company are not shown.
+
+np.round(df.describe(), 2).T
+
+#ALTERNATIVE WAY OF WRITING ABOVE
+#np.round(df.describe(), 2).transpose()
+count	mean	std	min	25%	50%	75%	max
+from_user_followers_count	26257.00	48397.00	103199.48	58.00	4426.00	6401.00	37586.00	424892.00
+from_user_listed_count	26257.00	533.32	684.03	8.00	209.00	253.00	748.00	4605.00
+from_user_statuses_count	26257.00	5190.04	4004.43	9.00	2311.00	4231.00	6324.00	16594.00
+retweet_count	26257.00	3.83	42.94	0.00	0.00	1.00	2.00	3719.00
+favorite_count	26257.00	1.52	15.28	0.00	0.00	0.00	1.00	1150.00
+entities_urls_count	26257.00	0.63	0.50	0.00	0.00	1.00	1.00	4.00
+entities_hashtags_count	26257.00	1.01	1.01	0.00	0.00	1.00	2.00	9.00
+entities_mentions_count	26257.00	0.96	1.14	0.00	0.00	1.00	1.00	11.00
+num_characters	26257.00	111.11	29.89	9.00	94.00	122.00	135.00	159.00
+English	26257.00	0.97	0.17	0.00	1.00	1.00	1.00	1.00
+RTs_binary	26257.00	0.55	0.50	0.00	0.00	1.00	1.00	1.00
+favorites_binary	26257.00	0.33	0.47	0.00	0.00	0.00	1.00	1.00
+hashtags_binary	26257.00	0.63	0.48	0.00	0.00	1.00	1.00	1.00
+mentions_binary	26257.00	0.61	0.49	0.00	0.00	1.00	1.00	1.00
+URLs_binary	26257.00	0.62	0.49	0.00	0.00	1.00	1.00	1.00
+
+We won't typically want the percentile columns in a social scientific publication. Supposedly, in version 0.16 of PANDAS, you can use 'percentiles=None' with the describe command to omit the percentiles. In version 0.16 as well as earlier versions of PANDAS we can alternatively select only those columns we want, then output to CSV.
+
+np.round(df.describe(), 2).T[['count','mean', 'std', 'min', 'max']]
+count	mean	std	min	max
+from_user_followers_count	26257.00	48397.00	103199.48	58.00	424892.00
+from_user_listed_count	26257.00	533.32	684.03	8.00	4605.00
+from_user_statuses_count	26257.00	5190.04	4004.43	9.00	16594.00
+retweet_count	26257.00	3.83	42.94	0.00	3719.00
+favorite_count	26257.00	1.52	15.28	0.00	1150.00
+entities_urls_count	26257.00	0.63	0.50	0.00	4.00
+entities_hashtags_count	26257.00	1.01	1.01	0.00	9.00
+entities_mentions_count	26257.00	0.96	1.14	0.00	11.00
+num_characters	26257.00	111.11	29.89	9.00	159.00
+English	26257.00	0.97	0.17	0.00	1.00
+RTs_binary	26257.00	0.55	0.50	0.00	1.00
+favorites_binary	26257.00	0.33	0.47	0.00	1.00
+hashtags_binary	26257.00	0.63	0.48	0.00	1.00
+mentions_binary	26257.00	0.61	0.49	0.00	1.00
+URLs_binary	26257.00	0.62	0.49	0.00	1.00
+
+### Save the Output of the Table as a CSV File
+Once you get more comfortable with Python and PANDAS you can combine your commands. For instance, we can simultaneously run our summary statistics and output the results to a CSV file.
+
+#WITH FOUR DECIMAL PLACES (DEFAULT)
+df.describe().transpose().to_csv('summary stats.csv', sep=',')
+
+For a typical social scientific publication, we would not need the percentile columns. We can instead select only those columns we want, then output to CSV.
+df.describe().transpose()[['count','mean', 'std', 'min', 'max']].to_csv('summary stats.csv', sep=',')
+
+The problem with the above output is that more than 2 decimal places are showing. If you want only two, then run the following version.
+#WITH TWO DECIMAL PLACES
+np.round(df.describe(), 2).T[['count','mean', 'std', 'min', 'max']].to_csv('summary stats.csv', sep=',')
+
+Now you have a CSV file containing the columns you'll need for a typical Summary Statistics or Descriptive Statistics table for a submission to a social science journal. You likely won't want all of the columns in the final table, so I would probably open up the CSV file in Excel, delete unwanted variables, then copy and paste into Word. At that point you just need some formatting for aesthetics. If you do want to select which specific variables to include, you can specify the columns like this.
+
+cols = ['retweet_count','RTs_binary']
+np.round(df[cols].describe(), 2).T[['count','mean', 'std', 'min', 'max']].to_csv('summary stats (partial).csv', sep=',')
+Outputting to LaTeX
+In some disciplines (e.g., Political Science, Engineering, Computer Science, Accounting, Finance, Economics) it is common to use LaTeX rather than Word. PANDAS has excellent LaTeX capabilities. For instance, the first of the following three lines of code shows how to output to a *.tex file rather than CSV, while the second shows what the LaTeX code looks like. The third imports an image of what the table looks like once it's rendered in TeXShop.
+
+np.round(df.describe(), 2).T[['count','mean', 'std', 'min', 'max']].to_latex('summary stats.tex')
+print np.round(df.describe(), 2).T[['count','mean', 'std', 'min', 'max']].to_latex()
+\begin{tabular}{lrrrrr}
+\toprule
+{} &    count &     mean &       std &   min &       max \\
+\midrule
+from\_user\_followers\_count & 26257.00 & 48397.00 & 103199.48 & 58.00 & 424892.00 \\
+from\_user\_listed\_count    & 26257.00 &   533.32 &    684.03 &  8.00 &   4605.00 \\
+from\_user\_statuses\_count  & 26257.00 &  5190.04 &   4004.43 &  9.00 &  16594.00 \\
+retweet\_count             & 26257.00 &     3.83 &     42.94 &  0.00 &   3719.00 \\
+favorite\_count            & 26257.00 &     1.52 &     15.28 &  0.00 &   1150.00 \\
+entities\_urls\_count       & 26257.00 &     0.63 &      0.50 &  0.00 &      4.00 \\
+entities\_hashtags\_count   & 26257.00 &     1.01 &      1.01 &  0.00 &      9.00 \\
+entities\_mentions\_count   & 26257.00 &     0.96 &      1.14 &  0.00 &     11.00 \\
+num\_characters            & 26257.00 &   111.11 &     29.89 &  9.00 &    159.00 \\
+English                   & 26257.00 &     0.97 &      0.17 &  0.00 &      1.00 \\
+RTs\_binary                & 26257.00 &     0.55 &      0.50 &  0.00 &      1.00 \\
+favorites\_binary          & 26257.00 &     0.33 &      0.47 &  0.00 &      1.00 \\
+hashtags\_binary           & 26257.00 &     0.63 &      0.48 &  0.00 &      1.00 \\
+mentions\_binary           & 26257.00 &     0.61 &      0.49 &  0.00 &      1.00 \\
+URLs\_binary               & 26257.00 &     0.62 &      0.49 &  0.00 &      1.00 \\
+\bottomrule
+\end{tabular}
+
+Image(width=600, filename='Descriptive Statistics Table (LaTeX).png') 
